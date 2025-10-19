@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, maximum-scale=1.0" />
+
+    <title>Ruby's HCDE 439 Physical Computing Page!</title>
+
+    <link href="style.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+    <h1>Ruby's Assignment 3!</h1><br>
+    <div class="assignmentheader">
+      <h2>Circuit and Schematics</h2><br>
+      <img src="a3schematics.jpg"/><br>
+      <img src="a3circuit.png"/>
+      <p>Using the multimeter on the photoresistor, I measured resistance values of 1k ohm when the light is on and 100k ohm when the light is off. I plugged in values to the voltage divider equation for R2 to get close to the desired 0V and 5V for when the LEDs are on and off.</p>
+      <p>V_out = 5 * (1000/(1000+10000) = 0.4545V</p>
+      <p>V_out = 5 * (100000/(100000+10000) = 4.545V</p>
+      <p>Based on these calculations, I used a 10k ohm resistor.</p><br>
+      <h2>Code Snippet</h2><br>
+      <pre><code>const int greenLED = 6; // set green LED to pin 6
+const int redLED = 5; // set red LED to pin 5
+const int sensorPin = A0; // set sensor pin to A0
+int sensorValue; // initialize sensor value
+int mappedValue; // initialize mapped value
+
+void setup() {
+  pinMode(greenLED, OUTPUT); // sets green LED as output
+  pinMode(redLED, OUTPUT); // sets red LED as output
+  Serial.begin(9600); // speed of sensor readings
+}
+
+void loop() {
+  sensorValue = analogRead(sensorPin); // reads value from photoresistor
+  sensorValue = constrain(sensorValue, 70, 240); // constrains values between 70 and 240
+  Serial.print("Sensor Value: "); // prints text for sensor value
+  Serial.print(sensorValue); // prints sensor value
+
+  mappedValue = map(sensorValue, 70, 240, 0, 255); // maps sensor values of 70 to 240 to 0 to 255
+  Serial.print("\t Mapped Value: "); // prints text for mapped value
+  Serial.println(mappedValue); // prints mapped value 
+
+  if (sensorValue < 200) { // if statement for LEDs when sensor value is lower than 200
+    digitalWrite(redLED, LOW); // red LED off
+    analogWrite(greenLED, sensorValue); // green LED is given sensor value to turn on
+  }
+  else { // else for when sensor value is higher than 200
+    digitalWrite(greenLED, LOW); // green LED off
+    analogWrite(redLED, sensorValue); // red LED is given sensor value to turn on
+  }
+}
+      </code></pre><br>
+      <h2>Operation</h2><br>
+      <img src="a3operation.gif"/><br>
+      <h2>Questions</h2><br>
+      <h3>In your voltage divider, can the variable resistor be either R1 or R2 or does it need to be one or the other? Justify your answer with example calculations.</h3>
+      <p>For the photoresistor, I measured a resistance of 1k ohm in the light to about 100k ohm in the dark. Using the voltage divider equation for when there is light, V_out = 5 * 1000 / (1000 + 10000) = 0.45V. If we were to switch R1 and R2, V_out = 5 * 10000 / (10000+1000) = 4.5V. With the photoresistor as R1, the voltage increases with light. If the photoresistor was R2, the voltage decreases with brightness. With my circuit, the variable resistor could be R1 or R2 but it would switch which LED is on when there's light and when it's dark.</p><br>
+      <h3>Draw a graph where the x-axis is time and the y-axis is voltage. Plot the voltage at V-measure of your voltage divider of your shared gif.</h3>
+      <img src="a3voltagevstime.jpg"/><br>
+      <h3>AnalogWrite and analogRead are respectively 8-bit and 10-bit values. Imagine you had 10-bit PWM and a 16-bit analog-to-digital converter instead. How would this change your map() code? Explain your answer.</h3>
+      <p>10-bit has a range of 0 to 1023 and 16-bit ranges from 0 to 65535. With the mapped range from 70 to 240, 70/1023 * 65535 = 4486 and 240/1023 * 65535 = 15377. The map() code would change to (4486, 15377, 0, 1023).</p><br>
+    </div>
+  </body>
+</html>
