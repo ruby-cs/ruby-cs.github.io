@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, maximum-scale=1.0" />
+
+    <title>Ruby's HCDE 439 Physical Computing Page!</title>
+
+    <link href="style.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+    <h1>Ruby's Assignment 6!</h1><br>
+    <div class="assignmentheader">
+      <h2>Circuit and Schematics</h2><br>
+      <img src="a6schematics.jpg"/><br>
+      <img src="a6circuit.png"/>
+      <h2>Operation</h2><br>
+      <img src="a6operation.gif"/>
+      <h2>Code Snippet (p5.js)</h2><br>
+      <pre><code>const BAUD_RATE = 9600; // baud rate of arduino sketch
+let port, connectBtn; // declaring local variables
+let btnUp, btnRight, btnDown, btnLeft;
+let btnX, btnY;
+
+let joyState = { // declaring joystick directions
+  U: false, // up
+  D: false, // down
+  L: false, // left
+  R: false // right
+};
+
+function setup() {
+  setupSerial(); // run serial setup function
+  createCanvas(windowWidth, windowHeight); // creates a canvas the size of the browser window
+
+  btnX = windowWidth / 2; // centering button's x direction
+  btnY = windowHeight / 2; // centering button's y direction
+
+  btnUp = select("#btnUp"); // up button from html
+  btnDown = select("#btnDown"); // down button from html
+  btnLeft = select("#btnLeft"); // left button from html
+  btnRight = select("#btnRight"); // right button from html
+
+  btnUp.position(btnX - 60, btnY - 160); // setting up button position
+  btnDown.position(btnX - 60, btnY + 40); // setting down button position
+  btnLeft.position(btnX - 160, btnY - 60); // setting left button position
+  btnRight.position(btnX + 40, btnY - 60); // setting right button position
+
+  btnUp.mousePressed(() => port.write("U")); // mouse click on up (red) button sends serial data for up
+  btnUp.mouseReleased(() => port.write("u")); // mouse release on up button sends serial data for up
+
+  btnDown.mousePressed(() => port.write("D")); // mouse click on down (green) button sends serial data for down
+  btnDown.mouseReleased(() => port.write("d")); // mouse release on down button sends serial data for down
+
+  btnLeft.mousePressed(() => port.write("L")); // mouse click on left (blue) button sends serial data for left
+  btnLeft.mouseReleased(() => port.write("l")); // mouse release on left button sends serial data for left
+
+  btnRight.mousePressed(() => port.write("R")); // mouse click on right (yellow) button sends serial data for right
+  btnRight.mouseReleased(() => port.write("r")); // mouse release on right button sends serial data for right
+}
+
+function draw() {
+  const portIsOpen = checkPort(); // check whether port is open
+  if (!portIsOpen) return; // if port is not open, exit draw loop
+
+  background(0); // setting background to black
+
+  // read incoming joystick states
+  let incoming = port.readUntil("\n");
+  if (incoming) {
+    incoming = incoming.trim();
+
+    if (incoming === "U") joyState.U = true;
+    if (incoming === "u") joyState.U = false;
+
+    if (incoming === "D") joyState.D = true;
+    if (incoming === "d") joyState.D = false;
+
+    if (incoming === "L") joyState.L = true;
+    if (incoming === "l") joyState.L = false;
+
+    if (incoming === "R") joyState.R = true;
+    if (incoming === "r") joyState.R = false;
+  }
+
+  // updates button pressed state
+  setPressStyle(btnUp, joyState.U);
+  setPressStyle(btnDown, joyState.D);
+  setPressStyle(btnLeft, joyState.L);
+  setPressStyle(btnRight, joyState.R);
+}
+
+function setPressStyle(button, pressed) { // sets press stile if button is pressed
+  if (pressed) button.addClass("pressed");
+  else button.removeClass("pressed"); 
+}
+
+function setupSerial() { // checking ports
+  port = createSerial();
+
+  let used = usedSerialPorts(); 
+  if (used.length > 0) { // if there are ports we've used, open the first one
+    port.open(used[0], BAUD_RATE); // if there are used ports, open the first one
+  }
+
+  connectBtn = createButton("Connect to Arduino"); // create connect button
+  connectBtn.position(5, 5); // position of button in top left
+  connectBtn.mouseClicked(onConnectButtonClicked); // when button is clicked, run onConnectButtonClicked)
+}
+
+function checkPort() {
+  if (!port.opened()) { // if port is not opened, change button text
+    connectBtn.html("Connect to Arduino"); //button connect text
+    background(50); // dark gray background
+    return false;
+  } else {
+    connectBtn.html("Disconnect"); // button disconnect text
+    return true;
+  }
+}
+
+function onConnectButtonClicked() { // when button is clicked
+  if (!port.opened()) { // if port is not opened, we open it
+    port.open(BAUD_RATE);
+  } else { // close
+    port.close();
+  }
+}
+</code></pre>
+<br>
+<h2>Code Snippet (index.html))</h2>
+<img src="a6index.html.png">
+<img src="a6index.html2.png">
+<br>
+<h2>Code Snippet (arduino)</h2>
+<pre><code>
+    const int xPin = A0; // sets x pin to A0
+const int yPin = A1; // sets y pin to A1
+const int swPin = 2; // sets SW pin to 2
+
+const int upLED = 8; // up (red) led to pin 8
+const int downLED = 9; // down (green) led to pin 9
+const int leftLED = 10; // left (blue) led to pin 10
+const int rightLED = 11; // right (yellow) led to pin 11
+
+void setup() {
+  pinMode(upLED, OUTPUT); // up led as output
+  pinMode(downLED, OUTPUT); // down led as output
+  pinMode(leftLED, OUTPUT); // left led as output
+  pinMode(rightLED, OUTPUT); // right led as output
+
+  pinMode(swPin, INPUT_PULLUP); // sets sw pin as input and internal pull-up resistor
+
+  Serial.begin(9600); // baud rate
+}
+
+// button state controlled by web
+bool upPress = false;
+bool downPress = false;
+bool leftPress = false;
+bool rightPress = false;
+
+void loop() {
+
+  int xVal = analogRead(xPin); // joystick x val
+  int yVal = analogRead(yPin); // joystick y val
+
+  bool joyUp    = yVal < 300; // joystick up if y val < 300
+  bool joyDown  = yVal > 700; // joystick down if y val > 700
+  bool joyLeft  = xVal < 300; // joystick x if val < 300
+  bool joyRight = xVal > 700; // joystick x val if x val and 6
+
+  if (Serial.available()) {
+    char c = Serial.read();
+
+    // character to templates
+    Serial.println(c);
+
+    if (c == 'U') upPress = true;
+    if (c == 'u') upPress = false;
+
+    if (c == 'D') downPress = true;
+    if (c == 'd') downPress = false;
+
+    if (c == 'L') leftPress = true;
+    if (c == 'l') leftPress = false;
+
+    if (c == 'R') rightPress = true;
+    if (c == 'r') rightPress = false;
+  }
+
+  // led is on if joystick or website says //
+  digitalWrite(upLED,    joyUp    || upPress);
+  digitalWrite(downLED,  joyDown  || downPress);
+  digitalWrite(leftLED,  joyLeft  || leftPress);
+  digitalWrite(rightLED, joyRight || rightPress);
+
+  // joystick state to website for button animations for joystick movement
+  static bool lastJoyUp = false;
+  static bool lastJoyDown = false;
+  static bool lastJoyLeft = false;
+  static bool lastJoyRight = false;
+
+  // send only when state changes
+  if (joyUp != lastJoyUp) {
+    Serial.println(joyUp ? 'U' : 'u');
+    lastJoyUp = joyUp;
+  }
+  if (joyDown != lastJoyDown) {
+    Serial.println(joyDown ? 'D' : 'd');
+    lastJoyDown = joyDown;
+  }
+  if (joyLeft != lastJoyLeft) {
+    Serial.println(joyLeft ? 'L' : 'l');
+    lastJoyLeft = joyLeft;
+  }
+  if (joyRight != lastJoyRight) {
+    Serial.println(joyRight ? 'R' : 'r');
+    lastJoyRight = joyRight;
+  }
+
+  delay(10);
+}
+</code></pre>
+    </div>
+  </body>
+</html>
+<br>
